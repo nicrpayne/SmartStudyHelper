@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 14% 23%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 14% 23%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 14% 23%;
+    --primary: 203 70% 52%;
+    --primary-foreground: 211 100% 99%;
+    --secondary: 30 95% 64%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 60 5% 96%;
+    --muted-foreground: 25 5% 45%;
+    --accent: 142 52% 62%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 6% 90%;
+    --input: 20 6% 90%;
+    --ring: 203 70% 52%;
+    --radius: 0.75rem;
+
+    /* Additional colors from design */
+    --text-dark: 222 14% 23%;
+    --light-gray: 220 20% 98%;
+
+    /* Chart colors (keeping from template) */
+    --chart-1: var(--primary);
+    --chart-2: var(--secondary);
+    --chart-3: var(--accent);
+    --chart-4: 259 62% 52%;
+    --chart-5: 334 78% 52%;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 203 70% 52%;
+    --primary-foreground: 211 100% 99%;
+    --secondary: 30 95% 64%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 142 52% 62%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 203 70% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Quicksand', sans-serif;
+  }
+  
+  .font-body {
+    font-family: 'Open Sans', sans-serif;
+  }
+}
