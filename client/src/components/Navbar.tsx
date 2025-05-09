@@ -22,17 +22,17 @@ export default function Navbar() {
         </Link>
         
         <nav className="hidden md:flex space-x-6">
-          <Link href="/">
-            <a className="font-heading font-medium text-primary hover:text-blue-700 transition">Home</a>
+          <Link href="/" className="font-heading font-medium text-primary hover:text-blue-700 transition">
+            Home
           </Link>
-          <Link href="/solve">
-            <a className="font-heading font-medium text-textDark hover:text-primary transition">My Problems</a>
+          <Link href="/solve" className="font-heading font-medium text-textDark hover:text-primary transition">
+            My Problems
           </Link>
-          <Link href="#">
-            <a className="font-heading font-medium text-textDark hover:text-primary transition">Resources</a>
+          <Link href="#" className="font-heading font-medium text-textDark hover:text-primary transition">
+            Resources
           </Link>
-          <Link href="#">
-            <a className="font-heading font-medium text-textDark hover:text-primary transition">Help</a>
+          <Link href="#" className="font-heading font-medium text-textDark hover:text-primary transition">
+            Help
           </Link>
         </nav>
         
@@ -50,17 +50,33 @@ export default function Navbar() {
             </SheetTrigger>
             <SheetContent>
               <div className="flex flex-col space-y-4 mt-8">
-                <Link href="/">
-                  <a className="font-heading font-medium text-lg" onClick={() => setOpen(false)}>Home</a>
+                <Link 
+                  href="/" 
+                  className="font-heading font-medium text-lg"
+                  onClick={() => setOpen(false)}
+                >
+                  Home
                 </Link>
-                <Link href="/solve">
-                  <a className="font-heading font-medium text-lg" onClick={() => setOpen(false)}>My Problems</a>
+                <Link 
+                  href="/solve" 
+                  className="font-heading font-medium text-lg"
+                  onClick={() => setOpen(false)}
+                >
+                  My Problems
                 </Link>
-                <Link href="#">
-                  <a className="font-heading font-medium text-lg" onClick={() => setOpen(false)}>Resources</a>
+                <Link 
+                  href="#" 
+                  className="font-heading font-medium text-lg"
+                  onClick={() => setOpen(false)}
+                >
+                  Resources
                 </Link>
-                <Link href="#">
-                  <a className="font-heading font-medium text-lg" onClick={() => setOpen(false)}>Help</a>
+                <Link 
+                  href="#" 
+                  className="font-heading font-medium text-lg"
+                  onClick={() => setOpen(false)}
+                >
+                  Help
                 </Link>
                 <Button className="mt-4 w-full">Sign In</Button>
               </div>

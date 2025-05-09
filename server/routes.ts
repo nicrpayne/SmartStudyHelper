@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -11,17 +11,30 @@ import { insertProblemSchema } from "@shared/schema";
 import { z } from "zod";
 import { ZodError } from "zod";
 
+// Declare multer to fix TypeScript errors
+declare module 'express-serve-static-core' {
+  interface Request {
+    file?: {
+      path: string;
+      filename: string;
+      originalname: string;
+      mimetype: string;
+      size: number;
+    };
+  }
+}
+
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: function (req: any, file: any, cb: (error: Error | null, destination: string) => void) {
       // Create uploads directory if it doesn't exist
       const uploadDir = path.join(process.cwd(), "uploads");
       fs.mkdir(uploadDir, { recursive: true })
         .then(() => cb(null, uploadDir))
         .catch(err => cb(err as Error, uploadDir));
     },
-    filename: function (req, file, cb) {
+    filename: function (req: any, file: any, cb: (error: Error | null, filename: string) => void) {
       // Create unique filename
       const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
       cb(null, uniqueName);
@@ -30,7 +43,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024 // 10 MB limit
   },
-  fileFilter: function (req, file, cb) {
+  fileFilter: function (req: any, file: any, cb: (error: Error | null, acceptFile: boolean) => void) {
     // Accept only images and PDFs
     const filetypes = /jpeg|jpg|png|pdf/;
     const mimetype = filetypes.test(file.mimetype);
@@ -40,7 +53,7 @@ const upload = multer({
       return cb(null, true);
     }
     
-    cb(new Error("Only images (JPEG, PNG) and PDF files are allowed"));
+    cb(new Error("Only images (JPEG, PNG) and PDF files are allowed"), false);
   }
 });
 
