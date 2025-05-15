@@ -1,11 +1,20 @@
 import OpenAI from "openai";
 import fs from "fs";
 import { Step } from "@shared/schema";
+import { openaiQueue } from "../lib/request-queue";
 
 // Initialize OpenAI client with API key
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY
 });
+
+/**
+ * Wrapper function to make OpenAI API calls through the request queue
+ * This helps prevent rate limit errors by managing request timing and retries
+ */
+async function queuedOpenAIRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+  return openaiQueue.addRequest(requestFn);
+}
 
 /**
  * Analyze a homework problem directly from an image using OpenAI's Vision models
@@ -38,34 +47,36 @@ export async function analyzeHomeworkImage(imagePath: string): Promise<{
     // More detailed logs for better debugging
     console.log("Sending vision API request to OpenAI");
     
-    // Prepare the request for vision analysis
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert educational tutor who specializes in explaining elementary school homework problems (Grades 1-5) to young students. When analyzing the image, focus on clearly identifying the exact problem shown, the appropriate grade level, and provide step-by-step explanations that are easy for children to understand."
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "This is a photo of an elementary school homework problem. Please analyze it with these steps:\n1. Extract and clearly describe the exact text/problem shown in the image\n2. Determine the appropriate grade level for this problem (likely Grade 3-5)\n3. Identify the problem type and core concepts involved\n4. Provide step-by-step guidance for solving it, with explanations tailored to elementary school students\n5. Explain the broader concepts involved in simple terms\n6. Provide the final answer or solution approach\n\nFormat your response as a JSON object with these properties: detectedText (exact problem text), gradeLevel, problemType, overview, steps (an array of {title, description, hintQuestion, hint}), detailedExplanation, and solution."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`
+    // Prepare the request for vision analysis using the queued request for rate limiting
+    const response = await queuedOpenAIRequest(() => 
+      openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert educational tutor who specializes in explaining elementary school homework problems (Grades 1-5) to young students. When analyzing the image, focus on clearly identifying the exact problem shown, the appropriate grade level, and provide step-by-step explanations that are easy for children to understand."
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "This is a photo of an elementary school homework problem. Please analyze it with these steps:\n1. Extract and clearly describe the exact text/problem shown in the image\n2. Determine the appropriate grade level for this problem (likely Grade 3-5)\n3. Identify the problem type and core concepts involved\n4. Provide step-by-step guidance for solving it, with explanations tailored to elementary school students\n5. Explain the broader concepts involved in simple terms\n6. Provide the final answer or solution approach\n\nFormat your response as a JSON object with these properties: detectedText (exact problem text), gradeLevel, problemType, overview, steps (an array of {title, description, hintQuestion, hint}), detailedExplanation, and solution."
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`
+                }
               }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 2000,
-      temperature: 0.5 // Lower temperature for more focused response
-    });
+            ]
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 2000,
+        temperature: 0.5 // Lower temperature for more focused response
+      })
+    );
 
     // Log that we received a response
     console.log("Received vision analysis response from OpenAI");
@@ -116,12 +127,14 @@ export async function analyzeHomeworkImage(imagePath: string): Promise<{
         detailedExplanation: result.detailedExplanation,
         solution: result.solution
       };
-    } catch (parseError) {
+    } catch (err) {
+      const parseError = err as Error;
       console.error("Error parsing OpenAI response:", parseError);
       console.log("Response content:", response.choices[0].message.content);
       throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
     }
-  } catch (error) {
+  } catch (err) {
+    const error = err as any;
     console.error("Error in vision-based homework analysis:", error);
     
     // Add more detailed error logging

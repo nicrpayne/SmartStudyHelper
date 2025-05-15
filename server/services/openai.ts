@@ -1,10 +1,19 @@
 import OpenAI from "openai";
 import { Step } from "@shared/schema";
+import { openaiQueue } from "../lib/request-queue";
 
 // Initialize OpenAI client with API key from environment variable
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || "your-api-key-placeholder" 
 });
+
+/**
+ * Wrapper function to make OpenAI API calls through the request queue
+ * This helps prevent rate limit errors by managing request timing and retries
+ */
+async function queuedOpenAIRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+  return openaiQueue.addRequest(requestFn);
+}
 
 // Function to analyze a problem using OpenAI
 export async function analyzeProblem(problemText: string): Promise<{
@@ -59,18 +68,21 @@ export async function analyzeProblem(problemText: string): Promise<{
   `;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        { 
-          role: "system", 
-          content: "You are an expert educational tutor who can identify the appropriate grade level for academic problems and tailor explanations accordingly. You adjust your vocabulary, complexity, and explanation style based on whether the student is in elementary school, middle school, high school, or college. Your goal is to make concepts accessible while promoting deeper understanding appropriate to the student's educational level."
-        },
-        { role: "user", content: prompt }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.5,
-    });
+    // Use the queued request function to manage API rate limits
+    const response = await queuedOpenAIRequest(() => 
+      openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { 
+            role: "system", 
+            content: "You are an expert educational tutor who can identify the appropriate grade level for academic problems and tailor explanations accordingly. You adjust your vocabulary, complexity, and explanation style based on whether the student is in elementary school, middle school, high school, or college. Your goal is to make concepts accessible while promoting deeper understanding appropriate to the student's educational level."
+          },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.5,
+      })
+    );
 
     const content = response.choices[0].message.content;
     if (!content) {

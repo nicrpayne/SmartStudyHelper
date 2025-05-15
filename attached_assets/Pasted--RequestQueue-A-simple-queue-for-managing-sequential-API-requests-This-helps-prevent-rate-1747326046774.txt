@@ -1,0 +1,111 @@
+/**
+ * RequestQueue - A simple queue for managing sequential API requests
+ * This helps prevent rate limit errors by ensuring:
+ * 1. Only one request is processed at a time
+ * 2. There's a configurable delay between requests
+ * 3. Requests are processed in the order they're received
+ */
+class RequestQueue {
+  constructor(options = {}) {
+    this.queue = [];
+    this.processing = false;
+    this.lastRequestTime = 0;
+    this.minTimeBetweenRequests = options.minTimeBetweenRequests || 1000; // Default: 1 second between requests
+    this.retryCount = options.retryCount || 3; // Default: retry failed requests 3 times
+    this.retryDelay = options.retryDelay || 2000; // Default: wait 2 seconds before retrying
+  }
+
+  /**
+   * Add a request to the queue
+   * @param {Function} requestFn - Function that returns a Promise (your API call)
+   * @returns {Promise} - Resolves with the API response or rejects with an error
+   */
+  addRequest(requestFn) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({
+        requestFn,
+        resolve,
+        reject,
+        retryCount: 0
+      });
+      this.processQueue();
+    });
+  }
+
+  /**
+   * Process the next request in the queue
+   */
+  async processQueue() {
+    if (this.processing || this.queue.length === 0) return;
+    
+    this.processing = true;
+    
+    // Ensure minimum time between requests
+    const now = Date.now();
+    const timeToWait = Math.max(0, this.lastRequestTime + this.minTimeBetweenRequests - now);
+    
+    if (timeToWait > 0) {
+      await new Promise(resolve => setTimeout(resolve, timeToWait));
+    }
+    
+    const request = this.queue.shift();
+    
+    try {
+      const result = await request.requestFn();
+      this.lastRequestTime = Date.now();
+      request.resolve(result);
+    } catch (error) {
+      // If it's a rate limit error and we haven't exceeded retry count, retry the request
+      if (error.statusCode === 429 && request.retryCount < this.retryCount) {
+        console.log(`Rate limit hit. Retrying after ${this.retryDelay}ms (Attempt ${request.retryCount + 1}/${this.retryCount})`);
+        request.retryCount++;
+        
+        // Put the request back at the front of the queue after a delay
+        setTimeout(() => {
+          this.queue.unshift(request);
+          this.processing = false;
+          this.processQueue();
+        }, this.retryDelay);
+        return;
+      }
+      
+      request.reject(error);
+    } finally {
+      if (this.processing) {
+        this.processing = false;
+        this.processQueue(); // Process next request
+      }
+    }
+  }
+}
+
+// Example usage with OpenAI API
+const openaiQueue = new RequestQueue({
+  minTimeBetweenRequests: 1000, // 1 second between requests
+  retryCount: 3,                // Retry up to 3 times on rate limit
+  retryDelay: 2000              // Wait 2 seconds before retrying
+});
+
+/**
+ * Example implementation with OpenAI
+ * Instead of calling the API directly, wrap it in the queue
+ */
+async function makeOpenAIRequest(prompt) {
+  return openaiQueue.addRequest(async () => {
+    try {
+      // Replace with your actual OpenAI API call
+      const response = await openai.createCompletion({
+        model: "gpt-3.5-turbo", // or your model of choice
+        prompt: prompt,
+        max_tokens: 1000
+      });
+      return response;
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      throw error; // Rethrow to let the queue handle retries
+    }
+  });
+}
+
+// You would then call this function instead of direct API calls
+// const response = await makeOpenAIRequest("Your prompt here");
