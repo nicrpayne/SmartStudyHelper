@@ -16,6 +16,7 @@ export const problems = pgTable("problems", {
   imageFilename: text("image_filename").notNull(),
   detectedText: text("detected_text").notNull(),
   problemType: text("problem_type").notNull(),
+  gradeLevel: text("grade_level"),
   overview: text("overview").notNull(),
   steps: jsonb("steps").$type<Step[]>().notNull(),
   detailedExplanation: text("detailed_explanation").notNull(),

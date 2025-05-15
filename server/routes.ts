@@ -99,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageFilename: req.file.filename,
         detectedText: ocrResult.text,
         problemType: analysis.problemType,
+        gradeLevel: analysis.gradeLevel,
         overview: analysis.overview,
         steps: analysis.steps,
         detailedExplanation: analysis.detailedExplanation,
