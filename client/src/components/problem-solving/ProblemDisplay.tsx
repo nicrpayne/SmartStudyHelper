@@ -2,7 +2,12 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { RefreshCw, Edit, Check } from "lucide-react";
+import { RefreshCw, Edit, Check, ChevronDown, ChevronRight } from "lucide-react";
+import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
 import type { HomeworkProblem } from "@shared/schema";
 
 interface ProblemDisplayProps {
@@ -20,6 +25,7 @@ export default function ProblemDisplay({
 }: ProblemDisplayProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(problem.detectedText);
+  const [isDetectionOpen, setIsDetectionOpen] = useState(false);
 
   const handleSaveEdit = () => {
     onEditText(editedText);
@@ -41,23 +47,34 @@ export default function ProblemDisplay({
 
         <CardContent className="p-4">
           <div className="space-y-4">
-            {/* Problem Detection */}
-            <div className="bg-blue-50 rounded-custom p-4">
-              <h3 className="font-heading font-bold text-primary mb-2">Problem Detection</h3>
+            {/* Problem Detection - Collapsible */}
+            <Collapsible 
+              open={isDetectionOpen} 
+              onOpenChange={setIsDetectionOpen}
+              className="bg-blue-50 rounded-custom"
+            >
+              <div className="p-4 pb-2">
+                <CollapsibleTrigger className="flex items-center font-heading font-bold text-primary w-full text-left">
+                  {isDetectionOpen ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+                  Problem Detection
+                </CollapsibleTrigger>
+              </div>
               
-              {isEditing ? (
-                <Textarea 
-                  value={editedText}
-                  onChange={(e) => setEditedText(e.target.value)}
-                  className="min-h-[100px] font-mono text-sm"
-                  placeholder="Type the corrected problem text here..."
-                />
-              ) : (
-                <p className="text-gray-700">
-                  We've detected: <span className="font-mono bg-white px-2 py-1 rounded">{problem.detectedText}</span>
-                </p>
-              )}
-            </div>
+              <CollapsibleContent className="px-4 pb-4">              
+                {isEditing ? (
+                  <Textarea 
+                    value={editedText}
+                    onChange={(e) => setEditedText(e.target.value)}
+                    className="min-h-[100px] font-mono text-sm"
+                    placeholder="Type the corrected problem text here..."
+                  />
+                ) : (
+                  <p className="text-gray-700">
+                    We've detected: <span className="font-mono bg-white px-2 py-1 rounded">{problem.detectedText}</span>
+                  </p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
             
             {/* Problem Type and Grade Level */}
             <div className="flex flex-wrap gap-3">
