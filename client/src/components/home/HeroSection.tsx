@@ -22,8 +22,19 @@ export default function HeroSection() {
       return res.json();
     },
     onSuccess: (data) => {
-      // Navigate to the problem solving page with the problem ID
-      navigate(`/solve?id=${data.problemId}`);
+      console.log("Analysis successful, response data:", data);
+      if (data && data.problemId) {
+        // Navigate to the problem solving page with the problem ID
+        console.log("Navigating to problem with ID:", data.problemId);
+        navigate(`/solve?id=${data.problemId}`);
+      } else {
+        console.error("Missing problemId in API response:", data);
+        toast({
+          title: "Navigation error",
+          description: "Could not load the problem solution. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       toast({

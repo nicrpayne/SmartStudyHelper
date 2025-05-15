@@ -18,6 +18,11 @@ export default function SolveProblem() {
   const params = new URLSearchParams(search);
   const problemId = params.get("id");
   const { toast } = useToast();
+  
+  // Log the problem ID for debugging
+  useEffect(() => {
+    console.log("Current problem ID:", problemId);
+  }, [problemId]);
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   
@@ -28,8 +33,19 @@ export default function SolveProblem() {
 
   // Fetch problem data if we have an ID
   const { data: problem, isLoading, error } = useQuery({
-    queryKey: ['/api/problems', problemId], 
+    queryKey: [`/api/problems/${problemId}`], 
     enabled: !!problemId,
+    onError: (err) => {
+      console.error("Error fetching problem:", err);
+      toast({
+        title: "Error loading problem",
+        description: "Could not load the homework problem. Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: (data) => {
+      console.log("Successfully loaded problem:", data);
+    }
   });
 
   // Mutation for updating problem text

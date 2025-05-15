@@ -60,6 +60,20 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
+  // Get all problems
+  app.get("/api/problems", async (req: Request, res: Response) => {
+    try {
+      const problems = await storage.getAllProblems();
+      return res.json(problems);
+    } catch (error) {
+      console.error("Error fetching all problems:", error);
+      return res.status(500).json({ 
+        message: "Failed to fetch problems", 
+        error: (error as Error).message 
+      });
+    }
+  });
+  
   // Analyze a problem (upload image and process)
   app.post("/api/analyze-problem", upload.single("problemImage"), async (req: Request, res: Response) => {
     try {
