@@ -179,7 +179,10 @@ export default function SolveProblem() {
             
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-8">
               <FileUpload onUpload={handleFileUpload} />
-              <WebcamCapture onCapture={handleWebcamCapture} />
+              <WebcamCapture 
+                onCapture={handleWebcamCapture} 
+                active={inputMethod !== 'file'} 
+              />
             </div>
             
             {file && (
