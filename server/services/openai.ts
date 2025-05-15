@@ -38,32 +38,41 @@ export async function analyzeProblem(problemText: string): Promise<{
   const prompt = `
     Analyze this homework problem: "${problemText}"
     
-    First, assess the approximate grade level (elementary, middle school, high school, college) this problem is appropriate for.
-    Then, provide a detailed but accessible explanation tailored for a student at that grade level.
+    First, carefully assess the precise grade level (K, Grade 1, Grade 2, Grade 3, Grade 4, Grade 5, Grade 6, Grade 7, Grade 8, Grade 9, Grade 10, Grade 11, Grade 12, College) this problem is appropriate for based on:
+    - Vocabulary and language complexity
+    - Mathematical concepts and operations required
+    - Problem-solving techniques needed
+    - Common curriculum standards for different grade levels
+
+    Then, provide a detailed explanation tailored specifically for a student at that precise grade level, adjusting:
+    - Vocabulary complexity (simpler for younger grades)
+    - Explanation depth (more scaffolding for younger grades)
+    - Amount of guidance (more direct guidance for younger grades)
+    - Hint complexity (more explicit hints for younger grades)
     
     Include:
-    1. The type of problem and core concepts involved
-    2. A brief overview of the approach to solve it using language appropriate for the identified grade level
-    3. Step-by-step solution process with hints for each step using vocabulary suitable for the grade level
-    4. A detailed explanation that connects this problem to broader concepts in a way students of that level can understand
+    1. The specific type of problem and core concepts involved
+    2. A brief overview of the approach using language appropriate for the identified grade level
+    3. Step-by-step solution process with hints tailored to the grade level (simpler, more direct hints for younger students)
+    4. A detailed explanation connecting this to broader concepts using grade-appropriate vocabulary and examples
     5. The final answer/solution with appropriate work shown
     
     Format your response in this exact JSON structure:
     {
-      "gradeLevel": "the approximate grade level (elementary, middle, high, college)",
-      "problemType": "Brief description of the problem type (e.g., 'Quadratic Equation')",
-      "overview": "A brief explanation of the approach to solve this problem (tailored to the grade level)",
+      "gradeLevel": "The specific grade level (K, Grade 1-12, or College)",
+      "problemType": "Specific description of the problem type",
+      "overview": "A brief explanation of the approach (using vocabulary appropriate for the detected grade level)",
       "steps": [
         {
-          "title": "Step title",
-          "description": "Clear explanation of this step using grade-appropriate language",
-          "hintQuestion": "Optional question that prompts thinking (if applicable)",
-          "hint": "Optional helpful hint for this step (if applicable)"
+          "title": "Step title (simple for young grades, more advanced for higher grades)",
+          "description": "Clear explanation using grade-appropriate language and concepts",
+          "hintQuestion": "Question that prompts thinking (simpler for younger grades)",
+          "hint": "Helpful hint (more direct for younger grades, more subtle for higher grades)"
         }
         // more steps as needed
       ],
-      "detailedExplanation": "Comprehensive explanation connecting this to broader concepts (grade-appropriate)",
-      "solution": "The final answer in a concise format with appropriate work shown"
+      "detailedExplanation": "Explanation connecting to broader concepts (using grade-appropriate language)",
+      "solution": "The final answer with appropriate work shown"
     }
   `;
 
@@ -177,7 +186,7 @@ function getMathProblemFallback(detectedText: string): {
   return {
     problemType: "Algebraic Equation",
     overview: "This problem requires solving an algebraic equation by isolating the variable using algebraic operations.",
-    gradeLevel: "high school",
+    gradeLevel: "Grade 8-10",
     steps: [
       {
         title: "Identify the equation type",
@@ -221,7 +230,7 @@ function getElementaryWordProblemFallback(): {
   return {
     problemType: "Word Problems",
     overview: "This problem involves solving a real-world situation using arithmetic operations and logical reasoning.",
-    gradeLevel: "Grade 3",
+    gradeLevel: "Grade 3-4",
     steps: [
       {
         title: "Understand the problem",
@@ -265,7 +274,7 @@ function getGeometryProblemFallback(): {
   return {
     problemType: "Geometry & Symmetry",
     overview: "This problem involves identifying symmetry in shapes and determining which figures are congruent (the same size and shape).",
-    gradeLevel: "Grade 3",
+    gradeLevel: "Grade 3-4",
     steps: [
       {
         title: "Understand symmetry",
@@ -309,7 +318,7 @@ function getElementaryMathFallback(): {
   return {
     problemType: "Elementary Mathematics",
     overview: "This problem involves basic math skills appropriate for elementary school students, likely including arithmetic operations, pattern recognition, or simple problem-solving.",
-    gradeLevel: "Grade 3",
+    gradeLevel: "Grade 3-4",
     steps: [
       {
         title: "Read the problem carefully",
