@@ -24,6 +24,7 @@ export default function SolveProblem() {
   const [file, setFile] = useState<File | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [showCaptureOptions, setShowCaptureOptions] = useState<boolean>(!problemId);
+  const [inputMethod, setInputMethod] = useState<'none' | 'file' | 'webcam'>('none');
 
   // Fetch problem data if we have an ID
   const { data: problem, isLoading, error } = useQuery({
@@ -75,16 +76,17 @@ export default function SolveProblem() {
   const handleFileUpload = (uploadedFile: File) => {
     setFile(uploadedFile);
     setCapturedImage(null);
+    setInputMethod('file');
   };
 
   const handleWebcamCapture = (imageSrc: string) => {
     setCapturedImage(imageSrc);
-    setFile(null);
     
     // Convert the data URL to a Blob to create a File
     const blob = dataURItoBlob(imageSrc);
     const capturedFile = new File([blob], "webcam-capture.jpg", { type: "image/jpeg" });
     setFile(capturedFile);
+    setInputMethod('webcam');
   };
 
   const handleSubmit = async () => {

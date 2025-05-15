@@ -12,6 +12,7 @@ import { useLocation } from "wouter";
 export default function HeroSection() {
   const [file, setFile] = useState<File | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [inputMethod, setInputMethod] = useState<'none' | 'file' | 'webcam'>('none');
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -36,16 +37,17 @@ export default function HeroSection() {
   const handleFileUpload = useCallback((uploadedFile: File) => {
     setFile(uploadedFile);
     setCapturedImage(null);
+    setInputMethod('file');
   }, []);
 
   const handleWebcamCapture = useCallback((imageSrc: string) => {
     setCapturedImage(imageSrc);
-    setFile(null);
     
     // Convert the data URL to a Blob to create a File
     const blob = dataURItoBlob(imageSrc);
     const capturedFile = new File([blob], "webcam-capture.jpg", { type: "image/jpeg" });
     setFile(capturedFile);
+    setInputMethod('webcam');
   }, []);
 
   const handleSubmit = async () => {
@@ -93,7 +95,10 @@ export default function HeroSection() {
       
       <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         <FileUpload onUpload={handleFileUpload} />
-        <WebcamCapture onCapture={handleWebcamCapture} />
+        <WebcamCapture 
+          onCapture={handleWebcamCapture} 
+          active={inputMethod !== 'file'} 
+        />
       </div>
 
       {file && (
