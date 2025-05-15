@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
 import { processOCR } from "./services/ocr";
 import { analyzeProblem } from "./services/openai";
+import { analyzeHomeworkImage } from "./services/vision-analysis";
 import { insertProblemSchema } from "@shared/schema";
 import { z } from "zod";
 import { ZodError } from "zod";
@@ -84,39 +85,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const imageFilePath = req.file.path;
       const source = req.body.source || "upload";
       
-      // Perform OCR on the image
-      const ocrResult = await processOCR(imageFilePath);
+      console.log(`Processing homework image (${source}): ${imageFilePath}`);
       
-      if (!ocrResult || !ocrResult.text) {
-        return res.status(422).json({ message: "Could not extract text from the image" });
+      try {
+        // Use Vision API to directly analyze the image
+        const analysis = await analyzeHomeworkImage(imageFilePath);
+        
+        // Create problem in storage
+        const problem = {
+          imageFilename: req.file.filename,
+          detectedText: analysis.detectedText,
+          problemType: analysis.problemType,
+          gradeLevel: analysis.gradeLevel,
+          overview: analysis.overview,
+          steps: analysis.steps,
+          detailedExplanation: analysis.detailedExplanation,
+          solution: analysis.solution
+        };
+        
+        const newProblem = await storage.createProblem(problem);
+        
+        // Log problem creation for debugging
+        console.log("Created new problem with ID:", newProblem.id);
+        console.log("Problem details:", JSON.stringify(newProblem, null, 2));
+        
+        return res.status(201).json({ 
+          message: "Problem analyzed successfully", 
+          problemId: newProblem.id 
+        });
+      } catch (visionError) {
+        console.error("Vision analysis failed, falling back to OCR:", visionError);
+        
+        // Fallback to OCR + text analysis
+        const ocrResult = await processOCR(imageFilePath);
+        
+        if (!ocrResult || !ocrResult.text) {
+          return res.status(422).json({ message: "Could not extract text from the image" });
+        }
+        
+        // Analyze the problem with OpenAI
+        const textAnalysis = await analyzeProblem(ocrResult.text);
+        
+        // Create problem in storage
+        const problem = {
+          imageFilename: req.file.filename,
+          detectedText: ocrResult.text,
+          problemType: textAnalysis.problemType,
+          gradeLevel: textAnalysis.gradeLevel,
+          overview: textAnalysis.overview,
+          steps: textAnalysis.steps,
+          detailedExplanation: textAnalysis.detailedExplanation,
+          solution: textAnalysis.solution
+        };
+        
+        const newProblem = await storage.createProblem(problem);
+        
+        console.log("Created new problem with ID (OCR fallback):", newProblem.id);
+        
+        return res.status(201).json({ 
+          message: "Problem analyzed with OCR fallback", 
+          problemId: newProblem.id 
+        });
       }
-      
-      // Analyze the problem with OpenAI
-      const analysis = await analyzeProblem(ocrResult.text);
-      
-      // Create problem in storage
-      const problem = {
-        imageFilename: req.file.filename,
-        detectedText: ocrResult.text,
-        problemType: analysis.problemType,
-        gradeLevel: analysis.gradeLevel,
-        overview: analysis.overview,
-        steps: analysis.steps,
-        detailedExplanation: analysis.detailedExplanation,
-        solution: analysis.solution
-      };
-      
-      const newProblem = await storage.createProblem(problem);
-      
-      // Log problem creation for debugging
-      console.log("Created new problem with ID:", newProblem.id);
-      console.log("Problem details:", JSON.stringify(newProblem, null, 2));
-      
-      return res.status(201).json({ 
-        message: "Problem analyzed successfully", 
-        problemId: newProblem.id 
-      });
-      
     } catch (error) {
       console.error("Error analyzing problem:", error);
       
