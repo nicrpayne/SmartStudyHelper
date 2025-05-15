@@ -13,6 +13,7 @@ interface WebcamCaptureProps {
 export default function WebcamCapture({ onCapture, active = true }: WebcamCaptureProps) {
   const [isWebcamEnabled, setIsWebcamEnabled] = useState<boolean>(false);
   const [isCaptureMode, setIsCaptureMode] = useState<boolean>(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const webcamRef = useRef<Webcam>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
@@ -111,7 +112,8 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
       console.log("Screenshot obtained:", imageSrc ? "successfully" : "failed");
       
       if (imageSrc) {
-        console.log("Capture successful, notifying parent component");
+        console.log("Capture successful, saving preview");
+        setCapturedImage(imageSrc);
         onCapture(imageSrc);
         setIsCaptureMode(false);
       } else {
@@ -133,6 +135,7 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
   }, [webcamRef, onCapture, toast]);
 
   const retakePhoto = () => {
+    setCapturedImage(null);
     setIsCaptureMode(true);
   };
   
@@ -167,7 +170,7 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
               <p className="text-gray-400">Click below to enable camera</p>
             </div>
           </div>
-        ) : (
+        ) : !capturedImage ? (
           <div className="relative">
             <Webcam
               audio={false}
@@ -199,6 +202,17 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
               </svg>
             </Button>
           </div>
+        ) : (
+          <div className="relative">
+            <img 
+              src={capturedImage} 
+              alt="Captured photo" 
+              className="w-full h-full object-cover rounded-custom" 
+            />
+            <div className="absolute top-0 left-0 bg-black bg-opacity-50 text-white px-3 py-1 text-sm rounded-br">
+              Photo captured
+            </div>
+          </div>
         )}
       </div>
       
@@ -211,10 +225,28 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
             <Camera className="mr-2 h-5 w-5" />
             Enable Camera
           </Button>
-        ) : isCaptureMode ? (
-          <div>
+        ) : capturedImage ? (
+          <div className="space-y-2">
             <Button 
-              className="w-full bg-secondary hover:bg-orange-500 text-white mb-2"
+              className="w-full"
+              variant="outline"
+              onClick={retakePhoto}
+            >
+              <RefreshCw className="mr-2 h-5 w-5" />
+              Take Another Photo
+            </Button>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={disableWebcam}
+            >
+              Turn Off Camera
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Button 
+              className="w-full bg-secondary hover:bg-orange-500 text-white"
               onClick={capture}
             >
               <Camera className="mr-2 h-5 w-5" />
@@ -228,15 +260,6 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
               Turn Off Camera
             </Button>
           </div>
-        ) : (
-          <Button 
-            className="w-full"
-            variant="outline"
-            onClick={retakePhoto}
-          >
-            <RefreshCw className="mr-2 h-5 w-5" />
-            Take Another Photo
-          </Button>
         )}
       </div>
     </Card>
