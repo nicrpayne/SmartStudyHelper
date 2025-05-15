@@ -38,7 +38,23 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    // Handle array query keys for URLs with parameters
+    let url = queryKey[0] as string;
+    
+    // If queryKey has multiple segments and the second one is a string or number,
+    // construct a path with it
+    if (queryKey.length > 1 && queryKey[1] !== null && queryKey[1] !== undefined) {
+      // For paths like /api/problems/1
+      if (url.endsWith('/')) {
+        url = `${url}${queryKey[1]}`;
+      } else {
+        url = `${url}/${queryKey[1]}`;
+      }
+    }
+    
+    console.log("Making fetch request to:", url);
+    
+    const res = await fetch(url, {
       credentials: "include",
     });
 
