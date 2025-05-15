@@ -63,32 +63,62 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
   }, [stopAllMediaTracks]);
 
   const enableWebcam = () => {
+    console.log("Enabling webcam...");
     setIsWebcamEnabled(true);
     setIsCaptureMode(true);
     
     // Access the webcam and save the stream reference
     navigator.mediaDevices.getUserMedia({ 
-      video: true,
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: "environment"
+      },
       audio: false 
     }).then(stream => {
+      console.log("Media stream obtained successfully");
       streamRef.current = stream;
+      
+      // Assign the stream to video elements directly if needed
+      if (webcamRef.current && webcamRef.current.video) {
+        webcamRef.current.video.srcObject = stream;
+      }
     }).catch(err => {
       console.error("Failed to get media stream:", err);
+      toast({
+        title: "Camera access failed",
+        description: "Please check your camera permissions and try again.",
+        variant: "destructive",
+      });
+      setIsWebcamEnabled(false);
     });
   };
 
   const capture = useCallback(() => {
-    if (!webcamRef.current) return;
+    if (!webcamRef.current) {
+      console.error("Webcam reference is not available");
+      toast({
+        title: "Capture failed",
+        description: "Webcam not initialized properly. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
+      console.log("Attempting to capture from webcam...");
       const imageSrc = webcamRef.current.getScreenshot();
+      console.log("Screenshot obtained:", imageSrc ? "successfully" : "failed");
+      
       if (imageSrc) {
+        console.log("Capture successful, notifying parent component");
         onCapture(imageSrc);
         setIsCaptureMode(false);
       } else {
+        console.error("Webcam returned empty screenshot");
         toast({
           title: "Capture failed",
-          description: "Could not capture image from webcam",
+          description: "Could not capture image from webcam. Please ensure camera permissions are granted.",
           variant: "destructive",
         });
       }
@@ -96,7 +126,7 @@ export default function WebcamCapture({ onCapture, active = true }: WebcamCaptur
       console.error("Webcam capture error:", error);
       toast({
         title: "Capture failed",
-        description: "An error occurred while capturing from webcam",
+        description: "An error occurred while capturing from webcam. Please try again.",
         variant: "destructive",
       });
     }
