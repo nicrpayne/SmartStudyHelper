@@ -107,6 +107,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newProblem = await storage.createProblem(problem);
       
+      // Log problem creation for debugging
+      console.log("Created new problem with ID:", newProblem.id);
+      console.log("Problem details:", JSON.stringify(newProblem, null, 2));
+      
       return res.status(201).json({ 
         message: "Problem analyzed successfully", 
         problemId: newProblem.id 

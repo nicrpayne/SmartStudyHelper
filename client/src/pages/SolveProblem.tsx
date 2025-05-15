@@ -32,20 +32,9 @@ export default function SolveProblem() {
   const [inputMethod, setInputMethod] = useState<'none' | 'file' | 'webcam'>('none');
 
   // Fetch problem data if we have an ID
-  const { data: problem, isLoading, error } = useQuery({
-    queryKey: [`/api/problems/${problemId}`], 
+  const { data: problem, isLoading, error } = useQuery<HomeworkProblem>({
+    queryKey: ['/api/problems', problemId], 
     enabled: !!problemId,
-    onError: (err) => {
-      console.error("Error fetching problem:", err);
-      toast({
-        title: "Error loading problem",
-        description: "Could not load the homework problem. Please try again.",
-        variant: "destructive",
-      });
-    },
-    onSuccess: (data) => {
-      console.log("Successfully loaded problem:", data);
-    }
   });
 
   // Mutation for updating problem text
