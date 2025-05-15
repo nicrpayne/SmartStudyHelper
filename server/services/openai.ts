@@ -13,6 +13,7 @@ export async function analyzeProblem(problemText: string): Promise<{
   steps: Step[];
   detailedExplanation: string;
   solution: string;
+  gradeLevel?: string;
 }> {
   // Check if we should use the development fallback
   const useDevFallback = process.env.NODE_ENV === 'development' || !process.env.OPENAI_API_KEY;
@@ -25,29 +26,32 @@ export async function analyzeProblem(problemText: string): Promise<{
   const prompt = `
     Analyze this homework problem: "${problemText}"
     
-    As an educational tutor, provide a detailed but accessible explanation for a student.
+    First, assess the approximate grade level (elementary, middle school, high school, college) this problem is appropriate for.
+    Then, provide a detailed but accessible explanation tailored for a student at that grade level.
+    
     Include:
     1. The type of problem and core concepts involved
-    2. A brief overview of the approach to solve it
-    3. Step-by-step solution process with hints for each step
-    4. A detailed explanation that connects this problem to broader concepts
-    5. The final answer/solution
+    2. A brief overview of the approach to solve it using language appropriate for the identified grade level
+    3. Step-by-step solution process with hints for each step using vocabulary suitable for the grade level
+    4. A detailed explanation that connects this problem to broader concepts in a way students of that level can understand
+    5. The final answer/solution with appropriate work shown
     
     Format your response in this exact JSON structure:
     {
+      "gradeLevel": "the approximate grade level (elementary, middle, high, college)",
       "problemType": "Brief description of the problem type (e.g., 'Quadratic Equation')",
-      "overview": "A brief explanation of the approach to solve this problem",
+      "overview": "A brief explanation of the approach to solve this problem (tailored to the grade level)",
       "steps": [
         {
           "title": "Step title",
-          "description": "Clear explanation of this step",
+          "description": "Clear explanation of this step using grade-appropriate language",
           "hintQuestion": "Optional question that prompts thinking (if applicable)",
           "hint": "Optional helpful hint for this step (if applicable)"
         }
         // more steps as needed
       ],
-      "detailedExplanation": "Comprehensive explanation connecting this to broader concepts",
-      "solution": "The final answer in a concise format"
+      "detailedExplanation": "Comprehensive explanation connecting this to broader concepts (grade-appropriate)",
+      "solution": "The final answer in a concise format with appropriate work shown"
     }
   `;
 
@@ -55,7 +59,10 @@ export async function analyzeProblem(problemText: string): Promise<{
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
-        { role: "system", content: "You are an expert homework tutor who helps students understand concepts through interactive step-by-step guidance." },
+        { 
+          role: "system", 
+          content: "You are an expert educational tutor who can identify the appropriate grade level for academic problems and tailor explanations accordingly. You adjust your vocabulary, complexity, and explanation style based on whether the student is in elementary school, middle school, high school, or college. Your goal is to make concepts accessible while promoting deeper understanding appropriate to the student's educational level."
+        },
         { role: "user", content: prompt }
       ],
       response_format: { type: "json_object" },
@@ -75,12 +82,18 @@ export async function analyzeProblem(problemText: string): Promise<{
       throw new Error("Invalid response structure from AI analysis");
     }
 
+    // Add logging for grade level detection
+    if (analysis.gradeLevel) {
+      console.log(`Detected grade level: ${analysis.gradeLevel}`);
+    }
+
     return {
       problemType: analysis.problemType,
       overview: analysis.overview,
       steps: analysis.steps,
       detailedExplanation: analysis.detailedExplanation,
-      solution: analysis.solution
+      solution: analysis.solution,
+      gradeLevel: analysis.gradeLevel || undefined
     };
   } catch (error) {
     console.error("OpenAI API error, using fallback:", error);
@@ -96,6 +109,7 @@ function getFallbackAnalysis(problemText: string): {
   steps: Step[];
   detailedExplanation: string;
   solution: string;
+  gradeLevel?: string;
 } {
   // Extract some text to simulate detection
   const detectedText = problemText.trim().substring(0, 100);
@@ -122,10 +136,12 @@ function getMathProblemFallback(detectedText: string): {
   steps: Step[];
   detailedExplanation: string;
   solution: string;
+  gradeLevel?: string;
 } {
   return {
     problemType: "Algebraic Equation",
     overview: "This problem requires solving an algebraic equation by isolating the variable using algebraic operations.",
+    gradeLevel: "high school",
     steps: [
       {
         title: "Identify the equation type",
