@@ -222,7 +222,16 @@ export default function StepByStepGuide({ problem, loading = false }: StepByStep
           </TabsContent>
           
           <TabsContent value="explanation">
-            <Button variant="outline" className="w-full" onClick={() => document.querySelector('[data-value="steps"]')?.click()}>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                const element = document.querySelector('[data-value="steps"]');
+                if (element && 'click' in element) {
+                  (element as HTMLElement).click();
+                }
+              }}
+            >
               Go to Step-by-Step Guide
             </Button>
           </TabsContent>

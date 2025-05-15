@@ -8,18 +8,32 @@ async function preprocessImage(filePath: string): Promise<string> {
   try {
     const outputPath = `${filePath}_processed.png`;
     
+    // Enhanced preprocessing pipeline for better text recognition
     await sharp(filePath)
       // Convert to grayscale
       .grayscale()
-      // Increase contrast
+      // Increase contrast for better text visibility
       .normalize()
-      // Adjust brightness
-      .modulate({ brightness: 1.1 })
-      // Reduce noise
+      // Sharpen the image to enhance text edges
+      .sharpen({ sigma: 1.2 })
+      // Adjust brightness for better contrast
+      .modulate({ brightness: 1.2 })
+      // Threshold to make text more distinct
+      .threshold(128)
+      // Reduce noise while preserving text edges
       .median(1)
-      // Save as PNG
+      // Ensure proper resolution for OCR
+      .resize({ 
+        width: 2000, 
+        height: 2000, 
+        fit: 'inside',
+        withoutEnlargement: true 
+      })
+      // Save as PNG (lossless format is better for OCR)
+      .png({ compressionLevel: 9 })
       .toFile(outputPath);
     
+    console.log(`Image preprocessed: ${outputPath}`);
     return outputPath;
   } catch (error) {
     console.error("Image preprocessing error:", error);
@@ -42,7 +56,7 @@ export async function processOCR(filePath: string): Promise<{ text: string; conf
       // Preprocess the image for better OCR results
       const processedFilePath = await preprocessImage(filePath);
       
-      // Perform OCR
+      // Perform OCR with improved configuration
       const result = await Tesseract.recognize(
         processedFilePath,
         'eng',
@@ -56,9 +70,31 @@ export async function processOCR(filePath: string): Promise<{ text: string; conf
         await fs.unlink(processedFilePath).catch(err => console.error("Error removing processed file:", err));
       }
       
-      // Return the OCR results
+      // Clean and process the OCR results
+      let extractedText = result.data.text.trim();
+      
+      // Remove excessive whitespace and normalize line breaks
+      extractedText = extractedText
+        .replace(/\s+/g, ' ')
+        .replace(/\n+/g, '\n')
+        .trim();
+      
+      // If the text is too short, try to extract more context
+      if (extractedText.length < 10) {
+        console.log("Extracted text too short, using original text");
+        // Just ensure it's properly formatted
+        extractedText = result.data.text
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('\n');
+      }
+      
+      console.log('Extracted OCR text:', extractedText);
+      
+      // Return the cleaned OCR results
       return {
-        text: result.data.text.trim(),
+        text: extractedText,
         confidence: result.data.confidence
       };
     } else if (ext === '.pdf') {

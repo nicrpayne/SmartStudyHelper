@@ -15,13 +15,16 @@ export async function analyzeProblem(problemText: string): Promise<{
   solution: string;
   gradeLevel?: string;
 }> {
-  // Check if we should use the development fallback
-  const useDevFallback = process.env.NODE_ENV === 'development' || !process.env.OPENAI_API_KEY;
+  // Check if we have an API key - we'll always try to use it if available
+  const useDevFallback = !process.env.OPENAI_API_KEY;
   
   if (useDevFallback) {
-    console.log("Using development fallback for OpenAI API. For production, please add a valid OpenAI API key.");
+    console.log("Using development fallback for OpenAI API. No API key found.");
     return getFallbackAnalysis(problemText);
   }
+  
+  // Log that we're using the API
+  console.log("Using OpenAI API for homework analysis");
   
   const prompt = `
     Analyze this homework problem: "${problemText}"
